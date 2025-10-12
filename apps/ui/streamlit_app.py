@@ -10,7 +10,6 @@ import chromadb
 import requests
 
 from agents.graph import invoke_graph
-from agents.llm import stream_answer_with_citations  # optional direct use if needed
 
 # ---- Env and Config ----
 load_dotenv()
@@ -34,7 +33,8 @@ def embed_query(texts: List[str]):
     return model.encode(texts, normalize_embeddings=True).tolist()
 # ---- UI ----
 st.set_page_config(page_title="PWB Agentic POC", layout="wide")
-st.title("PWB Agentic POC — Knowledge & Actions (RAG Preview)")
+st.title("Document questions and proposed actions")
+st.caption("Local RAG prototype · Citation formatting is checked; factual grounding is not verified.")
 
 with st.sidebar:
     st.subheader("Settings")
@@ -59,25 +59,9 @@ if prompt:
     # Chat transcript: show user message immediately
     st.session_state.history.append({"role": "user", "content": prompt})
 
-    # Stream the assistant response for live typing feel
-    with st.chat_message("assistant"):
-        placeholder = st.empty()
-        streamed = ""
-        # Reuse retrieved contexts from result to drive streamed answering if available
-        contexts = result.get("contexts", [])
-        if contexts:
-            for chunk in stream_answer_with_citations(
-                prompt,
-                contexts,
-                temperature=temperature,
-                style=style,
-            ):
-                streamed += chunk
-                placeholder.markdown(streamed)
-        else:
-            # Fallback to the non-streamed answer if no contexts
-            streamed = result.get("answer", "")
-            placeholder.markdown(streamed)
+    # Display the same draft that passed through the graph's citation-shape check.
+    # A second streamed synthesis would produce an unchecked answer and double provider work.
+    streamed = result.get("answer", "")
 
     # Persist the final assistant message and logs
     st.session_state.history.append({"role": "assistant", "content": streamed})
@@ -94,7 +78,7 @@ with col1:
         st.info("Ask a question to get started.")
 
 with col2:
-    st.subheader("Decision Log")
+    st.subheader("Workflow trace")
     if st.session_state.decision_log:
         for step in st.session_state.decision_log:
             st.code(step)
@@ -133,7 +117,7 @@ with col2:
                 payload = {**proposed, "operator": operator}
                 r = requests.post(f"{ops_url}{endpoint}", json=payload, timeout=10)
                 if r.ok:
-                    st.success("Action executed and audited.")
+                    st.success("Demo connector updated its local state and audit file.")
                 else:
                     st.error(f"Action failed: {r.status_code} {r.text}")
             except Exception as e:

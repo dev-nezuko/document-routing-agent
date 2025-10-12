@@ -2,11 +2,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Dict
 import re
-from pypdf import PdfReader
 
 
 def extract_text_from_pdf(pdf_path: Path) -> List[Dict]:
     """Extract text per page with basic cleanup. Returns a list of {page, text}."""
+    from pypdf import PdfReader
     reader = PdfReader(str(pdf_path))
     pages = []
     for i, page in enumerate(reader.pages):
@@ -21,6 +21,8 @@ def extract_text_from_pdf(pdf_path: Path) -> List[Dict]:
 
 def split_text(text: str, chunk_size: int = 900, overlap: int = 150) -> List[str]:
     """Simple character-based splitter with overlap."""
+    if chunk_size <= 0 or overlap < 0 or overlap >= chunk_size:
+        raise ValueError("Use chunk_size > 0 and 0 <= overlap < chunk_size")
     chunks = []
     start = 0
     n = len(text)

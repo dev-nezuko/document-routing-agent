@@ -109,12 +109,12 @@ def compose_node(state: AgentState) -> AgentState:
 
 
 def critic_node(state: AgentState) -> AgentState:
-    # Simple grounding check: require at least one [filename pX] pattern
+    # Citation-shape check only; this does not verify source identity or factual support.
     answer = state.get("answer", "")
-    grounded = bool(re.search(r"\[[^\]]+ p\d+\]", answer))
+    citation_shape_present = bool(re.search(r"\[[^\]]+ p\d+\]", answer))
 
     log = state.get("log", [])
-    log.append(f"Critic → END (grounded={grounded})")
+    log.append(f"Critic → END (citation_shape_present={citation_shape_present})")
     state["log"] = log
     return state
 
